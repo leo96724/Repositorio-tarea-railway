@@ -2,44 +2,50 @@ version: '2.1'
 orbs:
   node: circleci/node@5.1.0
 
+defaults: &defaults
+  docker:
+    - image: cimg/python:3.10
+  working_directory: ~/project
+
+prepare_venv: &prepare_venv
+  run:
+    name: Create venv
+    command: |
+      python -m venv venv
+      source venv/bin/activate
+      pip install --upgrade pip
+
 jobs:
   deploy_app_to_railway:
-    docker:
-      - image: cimg/node:20.9
+    <<: *defaults
     steps:
-      - checkout
+      - checkout:
+          path: ~/project/
       - node/install:
           node-version: '20.9'
       - run: node --version
+      - run: npm i -g @railway/cli
       - run:
-          name: Railway CLI (npx)
-          command: npx -y @railway/cli --version
-
-      # DEBUG opcional: comprobar que llega el token
-      - run:
-          name: Debug env
+          name: Deploy to Railway App
           command: |
-            echo "len(RAILWAY_TOKEN)=${#RAILWAY_TOKEN}"
-            echo "PROJECT_ID=$RAILWAY_PROJECT_ID"
-            echo "SERVICE=$RAILWAY_SERVICE"
+            cd bankchurn-api 
+            railway up --service=bankchurn
+            railway up --detach
 
-      - run:
-          name: Link al proyecto Railway
-          command: |
-            RAILWAY_TOKEN="$RAILWAY_TOKEN" npx -y @railway/cli link -p "$RAILWAY_PROJECT_ID"
-            RAILWAY_TOKEN="$RAILWAY_TOKEN" npx -y @railway/cli status || true
 
-      - run:
-          name: Deploy to Railway (Dockerfile en raíz)
-          command: |
-            RAILWAY_TOKEN="$RAILWAY_TOKEN" npx -y @railway/cli up \
-              --service "$RAILWAY_SERVICE" \
-              --detach --verbose
+tags_only: &tags_only
+  filters:
+    branches:
+      ignore: /.*/
+    tags:
+      only: /^.*/
 
 workflows:
+  version: 1
   deploy_pipeline:
     jobs:
       - deploy_app_to_railway:
           filters:
             branches:
-              only: [ main ]
+              only:
+                - main
