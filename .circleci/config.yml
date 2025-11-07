@@ -1,19 +1,4 @@
-version: '2.1'
-orbs:
-  node: circleci/node@5.1.0
-
-defaults: &defaults
-  docker:
-    - image: cimg/python:3.10
-  working_directory: ~/project
-
-prepare_venv: &prepare_venv
-  run:
-    name: Create venv
-    command: |
-      python -m venv venv
-      source venv/bin/activate
-      pip install --upgrade pip
+version: 2.1
 
 jobs:
   deploy_app_to_railway:
@@ -22,30 +7,33 @@ jobs:
     working_directory: ~/project
     steps:
       - checkout
+
       - run:
-          name: Instalar Railway CLI
+          name: Instalar Railway CLI (local)
           command: |
             npm install @railway/cli
             npx railway --version
-      - run:
-          name: Login y link a Railway
-          command: |
-            npx railway login --token "$RAILWAYTOKEN"
-            npx railway link -p "$RAILWAY_PROJECT_ID"
-      - run:
-          name: Deploy
-          command: |
-            npx railway up --service "$RAILWAYSERVICE" --detach
 
-tags_only: &tags_only
-  filters:
-    branches:
-      ignore: /.*/
-    tags:
-      only: /^.*/
+      - run:
+          name: Link al proyecto Railway
+          command: |
+            # RAILWAY_TOKEN se toma del entorno (Project Settings > Environment Variables)
+            npx railway link -p "$RAILWAY_PROJECT_ID"
+            # Opcional para diagnóstico:
+            npx railway status || true
+            # npx railway whoami || true
+
+      - run:
+          name: Deploy al servicio
+          command: |
+            # Si tu Dockerfile está en la RAÍZ del repo, deja esto tal cual:
+            npx railway up --service "$RAILWAY_SERVICE" --detach
+
+            # Si construyes desde bankchurn-api/, usa esto en su lugar:
+            # cd bankchurn-api
+            # npx railway up --service "$RAILWAY_SERVICE" --detach
 
 workflows:
-  version: 1
   deploy_pipeline:
     jobs:
       - deploy_app_to_railway:
