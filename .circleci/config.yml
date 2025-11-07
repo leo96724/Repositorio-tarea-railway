@@ -2,55 +2,44 @@ version: '2.1'
 orbs:
   node: circleci/node@5.1.0
 
-defaults: &defaults
-  docker:
-    - image: cimg/python:3.10
-  working_directory: ~/project
-
-prepare_venv: &prepare_venv
-  run:
-    name: Create venv
-    command: |
-      python -m venv venv
-      source venv/bin/activate
-      pip install --upgrade pip
-
 jobs:
   deploy_app_to_railway:
-    <<: *defaults
+    docker:
+      - image: cimg/node:20.9
     steps:
-      - checkout:
-          path: ~/project/
+      - checkout
+
       - node/install:
           node-version: '20.9'
       - run: node --version
 
-      # (1) Ver/usar Railway CLI con npx (sin instalar global)
+      # Ver CLI (sin instalar global para evitar EACCES)
       - run:
           name: Railway CLI (npx)
-          command: |
-            npx -y @railway/cli --version
+          command: npx -y @railway/cli --version
 
-      # (2) Link al proyecto usando el token del entorno
+      # (Opcional) Chequeo de variables
+      - run:
+          name: Chequear variables de entorno
+          command: |
+            echo "RAILWAY_TOKEN presente? -> ${RAILWAY_TOKEN:+sí}"
+            echo "RAILWAY_PROJECT_ID: $RAILWAY_PROJECT_ID"
+            echo "RAILWAY_SERVICE: $RAILWAY_SERVICE"
+
+      # Link al proyecto con token por entorno
       - run:
           name: Link al proyecto Railway
           command: |
             RAILWAY_TOKEN="$RAILWAY_TOKEN" npx -y @railway/cli link -p "$RAILWAY_PROJECT_ID"
             RAILWAY_TOKEN="$RAILWAY_TOKEN" npx -y @railway/cli status || true
 
-      # (3) Deploy (elige la carpeta según tu Dockerfile)
+      # Deploy desde la RAÍZ (Dockerfile está aquí)
       - run:
           name: Deploy to Railway App
           command: |
-            # Si tu Dockerfile está en la RAÍZ del repo, deja esto:
-            RAILWAY_TOKEN="$RAILWAY_TOKEN" npx -y @railway/cli up --service "$RAILWAY_SERVICE" --detach
-
-            # Si tu Dockerfile está dentro de bankchurn-api/, usa esto en cambio:
-            # cd bankchurn-api
-            # RAILWAY_TOKEN="$RAILWAY_TOKEN" npx -y @railway/cli up --service "$RAILWAY_SERVICE" --detach
+            RAILWAY_TOKEN="$RAILWAY_TOKEN" npx -y @railway/cli up --service "$RAILWAY_SERVICE" --detach --verbose
 
 workflows:
-  version: 1
   deploy_pipeline:
     jobs:
       - deploy_app_to_railway:
