@@ -4,36 +4,32 @@ jobs:
   deploy_app_to_railway:
     docker:
       - image: cimg/node:20.9
-    working_directory: ~/project
     steps:
       - checkout
 
       - run:
-          name: Instalar Railway CLI (local)
+          name: Instalar Railway CLI
           command: |
-            npm install @railway/cli
-            npx railway --version
+            npm install -g @railway/cli
+            railway --version
+
+      - run:
+          name: Login en Railway
+          command: |
+            railway login --apiKey "$RAILWAYTOKEN"
 
       - run:
           name: Link al proyecto Railway
           command: |
-            # RAILWAY_TOKEN se toma del entorno (Project Settings > Environment Variables)
-            npx railway link -p "$RAILWAY_PROJECT_ID"
-            # Opcional para diagnóstico:
-            npx railway status || true
-            # npx railway whoami || true
+            railway link -p "$RAILWAY_PROJECT_ID"
 
       - run:
-          name: Deploy al servicio
+          name: Deploy con Railway
           command: |
-            # Si tu Dockerfile está en la RAÍZ del repo, deja esto tal cual:
-            npx railway up --service "$RAILWAY_SERVICE" --detach
-
-            # Si construyes desde bankchurn-api/, usa esto en su lugar:
-            # cd bankchurn-api
-            # npx railway up --service "$RAILWAY_SERVICE" --detach
+            railway up --service "$RAILWAYSERVICE" --detach
 
 workflows:
+  version: 2
   deploy_pipeline:
     jobs:
       - deploy_app_to_railway:
