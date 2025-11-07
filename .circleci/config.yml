@@ -30,12 +30,12 @@ jobs:
       - run:
           name: Login y link a Railway
           command: |
-            npx railway login --token "$RAILWAY_TOKEN"
+            npx railway login --token "$RAILWAYTOKEN"
             npx railway link -p "$RAILWAY_PROJECT_ID"
       - run:
           name: Deploy
           command: |
-            npx railway up --service "$RAILWAY_SERVICE" --detach
+            npx railway up --service "$RAILWAYSERVICE" --detach
 
 tags_only: &tags_only
   filters:
