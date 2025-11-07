@@ -1,0 +1,13 @@
+# No subas cosas innecesarias al contexto
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.log
+**/.pytest_cache
+**/.mypy_cache
+**/.venv
+**/venv
+**/env
+.DS_Store
+.git
+.gitignore
