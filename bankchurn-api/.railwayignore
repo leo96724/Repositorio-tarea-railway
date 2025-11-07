@@ -1,0 +1,11 @@
+# NO ignoramos el wheel
+__pycache__/
+*.pyc
+*.log
+.env
+.venv/
+venv/
+env/
+.DS_Store
+# Permitimos wheels explícitamente
+!model-pkg/*.whl
