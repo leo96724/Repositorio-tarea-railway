@@ -14,13 +14,26 @@ jobs:
       - run:
           name: Railway CLI (npx)
           command: npx -y @railway/cli --version
+
+      # DEBUG opcional: comprobar que llega el token
       - run:
-          name: Deploy directo (sin link)
+          name: Debug env
           command: |
             echo "len(RAILWAY_TOKEN)=${#RAILWAY_TOKEN}"
+            echo "PROJECT_ID=$RAILWAY_PROJECT_ID"
+            echo "SERVICE=$RAILWAY_SERVICE"
+
+      - run:
+          name: Link al proyecto Railway
+          command: |
+            RAILWAY_TOKEN="$RAILWAY_TOKEN" npx -y @railway/cli link -p "$RAILWAY_PROJECT_ID"
+            RAILWAY_TOKEN="$RAILWAY_TOKEN" npx -y @railway/cli status || true
+
+      - run:
+          name: Deploy to Railway (Dockerfile en raíz)
+          command: |
             RAILWAY_TOKEN="$RAILWAY_TOKEN" npx -y @railway/cli up \
-              -p "$RAILWAY_PROJECT_ID" \
-              -s "$RAILWAY_SERVICE" \
+              --service "$RAILWAY_SERVICE" \
               --detach --verbose
 
 workflows:
