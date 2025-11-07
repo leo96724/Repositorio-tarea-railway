@@ -8,36 +8,20 @@ jobs:
       - image: cimg/node:20.9
     steps:
       - checkout
-
       - node/install:
           node-version: '20.9'
       - run: node --version
-
-      # Ver CLI (sin instalar global para evitar EACCES)
       - run:
           name: Railway CLI (npx)
           command: npx -y @railway/cli --version
-
-      # (Opcional) Chequeo de variables
       - run:
-          name: Chequear variables de entorno
+          name: Deploy directo (sin link)
           command: |
-            echo "RAILWAY_TOKEN presente? -> ${RAILWAY_TOKEN:+sí}"
-            echo "RAILWAY_PROJECT_ID: $RAILWAY_PROJECT_ID"
-            echo "RAILWAY_SERVICE: $RAILWAY_SERVICE"
-
-      # Link al proyecto con token por entorno
-      - run:
-          name: Link al proyecto Railway
-          command: |
-            RAILWAY_TOKEN="$RAILWAY_TOKEN" npx -y @railway/cli link -p "$RAILWAY_PROJECT_ID"
-            RAILWAY_TOKEN="$RAILWAY_TOKEN" npx -y @railway/cli status || true
-
-      # Deploy desde la RAÍZ (Dockerfile está aquí)
-      - run:
-          name: Deploy to Railway App
-          command: |
-            RAILWAY_TOKEN="$RAILWAY_TOKEN" npx -y @railway/cli up --service "$RAILWAY_SERVICE" --detach --verbose
+            echo "len(RAILWAY_TOKEN)=${#RAILWAY_TOKEN}"
+            RAILWAY_TOKEN="$RAILWAY_TOKEN" npx -y @railway/cli up \
+              -p "$RAILWAY_PROJECT_ID" \
+              -s "$RAILWAY_SERVICE" \
+              --detach --verbose
 
 workflows:
   deploy_pipeline:
@@ -45,5 +29,4 @@ workflows:
       - deploy_app_to_railway:
           filters:
             branches:
-              only:
-                - main
+              only: [ main ]
