@@ -8,28 +8,30 @@ jobs:
       - checkout
 
       - run:
-          name: Instalar Railway CLI
+          name: Instalar Railway CLI (local / ad-hoc)
           command: |
-            npm install -g @railway/cli
-            railway --version
+            # npx lo descarga al vuelo; --yes evita prompts
+            npx -y @railway/cli --version
 
       - run:
-          name: Login en Railway
+          name: Login con API Key y link al proyecto
           command: |
-            railway login --apiKey "$RAILWAYTOKEN"
+            npx -y @railway/cli login --apiKey "$RAILWAY_TOKEN"
+            npx -y @railway/cli link -p "$RAILWAY_PROJECT_ID"
+            # Diagnóstico opcional:
+            npx -y @railway/cli status || true
 
       - run:
-          name: Link al proyecto Railway
+          name: Deploy a Railway
           command: |
-            railway link -p "$RAILWAY_PROJECT_ID"
+            # Si tu Dockerfile está en la RAÍZ del repo:
+            npx -y @railway/cli up --service "$RAILWAY_SERVICE" --detach
 
-      - run:
-          name: Deploy con Railway
-          command: |
-            railway up --service "$RAILWAYSERVICE" --detach
+            # Si construyes desde bankchurn-api/, usa en su lugar:
+            # cd bankchurn-api
+            # npx -y @railway/cli up --service "$RAILWAY_SERVICE" --detach
 
 workflows:
-  version: 2
   deploy_pipeline:
     jobs:
       - deploy_app_to_railway:
