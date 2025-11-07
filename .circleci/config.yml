@@ -1,37 +1,56 @@
-version: 2.1
+version: '2.1'
+orbs:
+  node: circleci/node@5.1.0
+
+defaults: &defaults
+  docker:
+    - image: cimg/python:3.10
+  working_directory: ~/project
+
+prepare_venv: &prepare_venv
+  run:
+    name: Create venv
+    command: |
+      python -m venv venv
+      source venv/bin/activate
+      pip install --upgrade pip
 
 jobs:
   deploy_app_to_railway:
-    docker:
-      - image: cimg/node:20.9
+    <<: *defaults
     steps:
-      - checkout
+      - checkout:
+          path: ~/project/
+      - node/install:
+          node-version: '20.9'
+      - run: node --version
 
+      # (1) Ver/usar Railway CLI con npx (sin instalar global)
       - run:
-          name: Instalar Railway CLI (local / ad-hoc)
+          name: Railway CLI (npx)
           command: |
-            # npx lo descarga al vuelo; --yes evita prompts
             npx -y @railway/cli --version
 
+      # (2) Link al proyecto usando el token del entorno
       - run:
-          name: Login con API Key y link al proyecto
+          name: Link al proyecto Railway
           command: |
-            npx -y @railway/cli login --apiKey "$RAILWAY_TOKEN"
-            npx -y @railway/cli link -p "$RAILWAY_PROJECT_ID"
-            # Diagnóstico opcional:
-            npx -y @railway/cli status || true
+            RAILWAY_TOKEN="$RAILWAY_TOKEN" npx -y @railway/cli link -p "$RAILWAY_PROJECT_ID"
+            RAILWAY_TOKEN="$RAILWAY_TOKEN" npx -y @railway/cli status || true
 
+      # (3) Deploy (elige la carpeta según tu Dockerfile)
       - run:
-          name: Deploy a Railway
+          name: Deploy to Railway App
           command: |
-            # Si tu Dockerfile está en la RAÍZ del repo:
-            npx -y @railway/cli up --service "$RAILWAY_SERVICE" --detach
+            # Si tu Dockerfile está en la RAÍZ del repo, deja esto:
+            RAILWAY_TOKEN="$RAILWAY_TOKEN" npx -y @railway/cli up --service "$RAILWAY_SERVICE" --detach
 
-            # Si construyes desde bankchurn-api/, usa en su lugar:
+            # Si tu Dockerfile está dentro de bankchurn-api/, usa esto en cambio:
             # cd bankchurn-api
-            # npx -y @railway/cli up --service "$RAILWAY_SERVICE" --detach
+            # RAILWAY_TOKEN="$RAILWAY_TOKEN" npx -y @railway/cli up --service "$RAILWAY_SERVICE" --detach
 
 workflows:
+  version: 1
   deploy_pipeline:
     jobs:
       - deploy_app_to_railway:
