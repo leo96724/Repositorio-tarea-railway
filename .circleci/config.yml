@@ -23,13 +23,13 @@ jobs:
           path: ~/project/
       - node/install:
           node-version: '20.9'
-      - run: node --version
+      - run: node --version 
       - run: npm i -g @railway/cli
       - run:
           name: Deploy to Railway App
           command: |
-            cd bankchurn-api 
-            railway up --service=bankchurn
+            cd bankchurn-api
+            railway up --service=pacific-clarity
             railway up --detach
 
 
